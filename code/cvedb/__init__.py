@@ -20,7 +20,7 @@ from db import CVE_DB
 FORMAT = "%(asctime)-15s %(levelname)-10s %(name)-10s %(message)s"
 logging.basicConfig(format=FORMAT)
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+LOGGER.setLevel(logging.INFO)
 
 
 class Product:
@@ -156,30 +156,31 @@ class VulnerabilityBuilder:
         if r.status_code == 200:
             tree = html.fromstring(r.content)
            
-            v = Vulnerability(cve)
-            v.description = tree.xpath('//*[@id="cvedetails"]/div[1]/text()')[0]  # Description
-            
-            # Parse CVSS score table
-            cvss_score = 'normalize-space(//*[@id="cvssscorestable"]/tr[{0}]/td[1])';  # CVSS score XPATH template
-            
-            v.cvss_score                = tree.xpath(cvss_score.format(1))
-            v.confidentiality_impact    = tree.xpath(cvss_score.format(2))
-            v.integrity_impact          = tree.xpath(cvss_score.format(3))
-            v.availability_impact       = tree.xpath(cvss_score.format(4))
-            v.access_complexity         = tree.xpath(cvss_score.format(5))
-            v.authentication            = tree.xpath(cvss_score.format(6))
-            v.gained_access             = tree.xpath(cvss_score.format(7))
-            
-            v.vulnerability_type        = tree.xpath(cvss_score.format(8))
-            v.cwe_id                    = tree.xpath(cvss_score.format(9))
-            
-            # Parse affected products table
-            affected = tree.xpath('//*[@id="vulnprodstable"]/tr')
-            for tr_element in affected[1:]:
-                product = ProductBuilder.get_product_from_xml(tr_element)
-                v.add_product(product)
-            
-            return v
+            if not tree.xpath('normalize-space(//*[@id="contentdiv"]/div/strong)') == 'Unknown CVE ID':
+                v = Vulnerability(cve)
+                v.description = tree.xpath('//*[@id="cvedetails"]/div[1]/text()')[0]  # Description
+                
+                # Parse CVSS score table
+                cvss_score = 'normalize-space(//*[@id="cvssscorestable"]/tr[{0}]/td[1])';  # CVSS score XPATH template
+                
+                v.cvss_score                = tree.xpath(cvss_score.format(1))
+                v.confidentiality_impact    = tree.xpath(cvss_score.format(2))
+                v.integrity_impact          = tree.xpath(cvss_score.format(3))
+                v.availability_impact       = tree.xpath(cvss_score.format(4))
+                v.access_complexity         = tree.xpath(cvss_score.format(5))
+                v.authentication            = tree.xpath(cvss_score.format(6))
+                v.gained_access             = tree.xpath(cvss_score.format(7))
+                
+                v.vulnerability_type        = tree.xpath(cvss_score.format(8))
+                v.cwe_id                    = tree.xpath(cvss_score.format(9))
+                
+                # Parse affected products table
+                affected = tree.xpath('//*[@id="vulnprodstable"]/tr')
+                for tr_element in affected[1:]:
+                    product = ProductBuilder.get_product_from_xml(tr_element)
+                    v.add_product(product)
+                
+                return v
         # end-of-method get_vulnerability_by_cve
     
     @staticmethod
@@ -224,25 +225,8 @@ class VulnerabilityBuilder:
 # end-of-class VulnerabilityBuilder    
 
 
-
-def test():
-    TEST_CVE = 'CVE-2016-1010'
-    TEST_CVE_INVALID = 'xxx'
-    #v = VulnerabilityBuilder.get_vulnerability_by_cve('CVE-2016-1010')
-    
-    #with CVE_DB() as db:
-    #    db.add_vulnerability(v)
-    
-    with CVE_DB() as db:
-        v = VulnerabilityBuilder.get_vulnerability_by_cve_db(db, TEST_CVE)
-        print v.__dict__
-        
-        v = VulnerabilityBuilder.get_vulnerability_by_cve_db(db, TEST_CVE_INVALID)
-# end-of-method test    
-
-
 ##
 #  Entry point
 if __name__ == '__main__':
-    test()
+    pass
     

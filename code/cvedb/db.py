@@ -42,7 +42,7 @@ def create_db(name):
         # Create 'product' table 
         LOGGER.info('Creating table "product"')
         cursor.execute("""CREATE TABLE product (product_type TEXT, vendor TEXT, product TEXT, 
-                        version TEXT, up TEXT, edition TEXT, language TEXT, UNIQUE(product, version, up, edition, language))""")
+                        version TEXT, up TEXT, edition TEXT, language TEXT, UNIQUE(product_type, vendor, product, version, up, edition, language))""")
         
         # Create 'vulnerability' table 
         LOGGER.info('Creating table "vulnerability"')
@@ -116,13 +116,19 @@ class CVE_DB():
         assert self.cursor is not None, 'DB connection not set!'
         LOGGER.debug('Adding product={}; version={}.'.format(p.product, p.version))
         
-        self.cursor.execute("""INSERT INTO 
+        self.cursor.execute("""INSERT OR IGNORE INTO 
                             product (product_type, vendor, product, version, up, edition, language) 
                             VALUES (?, ?, ?, ?, ?, ?, ?)""", 
                             (p.product_type, p.vendor, p.product, p.version, p.update,
                             p.edition, p.language))
         
-        return self.cursor.lastrowid
+        self.cursor.execute("""SELECT rowid FROM product WHERE 
+                            (product_type=? AND vendor=? AND product=? AND version=? AND up=? AND edition=? AND language=?)""", 
+                            (p.product_type, p.vendor, p.product, p.version, p.update,
+                            p.edition, p.language))
+        p_id = self.cursor.fetchone()
+        
+        return int(p_id[0])
     # end-of-function add_product
 
     def add_vulnerability(self, v):
@@ -161,6 +167,7 @@ class CVE_DB():
     
     def get_string_id(self, string):
         """Get string id from DB.
+        If string is not found in DB, it is added.
         
         Arguments:
         string -- String value.
@@ -181,7 +188,7 @@ class CVE_DB():
             str_id = self.cursor.lastrowid
         else:
             LOGGER.debug('String found in DB.')
-            str_id = int(str_id)
+            str_id = int(str_id[0])
             
         return str_id
     # end-of-method get_string_id
