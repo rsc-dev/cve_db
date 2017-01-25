@@ -149,6 +149,12 @@ class CVE_DB():
         gained_access_id            = self.get_string_id(v.gained_access)
         vulnerability_type_id       = self.get_string_id(v.vulnerability_type)
         
+        self.cursor.execute("""SELECT rowid FROM vulnerability WHERE cve = ?""", (v.cve,))
+        v_id = self.cursor.fetchone()
+        
+        if v_id is not None:
+            return
+        
         self.cursor.execute("""INSERT INTO 
                             vulnerability (cve, description, cvss_score, confidentiality_impact, integrity_impact, availability_impact,
                             access_complexity, authentication, gained_access, vulnerability_type, cwe_id) 
