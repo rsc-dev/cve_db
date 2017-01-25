@@ -1,7 +1,7 @@
 # CVE DB
 
 ## About
-CVE DB is a sqlite DB with CVEs and Python binding.
+CVE DB is a sqlite DB with CVEs and Python API.
 CVEs are scrapped from [CVE Details](https://www.cvedetails.com/).
 
 Latest DB is from 17.01.2017.
